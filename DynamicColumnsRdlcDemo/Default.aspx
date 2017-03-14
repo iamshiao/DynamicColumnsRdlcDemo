@@ -11,6 +11,10 @@
 <body>
     <h2>Dynamic Columns RDLC Demo</h2>
     <form id="form1" runat="server">
+        <asp:DropDownList ID="DropDownList_changeTimeGap" runat="server" AutoPostBack="True" OnSelectedIndexChanged="DropDownList_changeTimeGap_SelectedIndexChanged">
+            <asp:ListItem>Month</asp:ListItem>
+            <asp:ListItem>Year</asp:ListItem>
+        </asp:DropDownList>
         <div>
             <rsweb:ReportViewer ID="ReportViewer_main" runat="server" Height="500px" Width="1280px"></rsweb:ReportViewer>
         </div>

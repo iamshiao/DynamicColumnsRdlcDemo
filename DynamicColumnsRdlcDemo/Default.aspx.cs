@@ -15,6 +15,21 @@ namespace DynamicColumnsRdlcDemo
     {
         protected void Page_Init(object sender, EventArgs e)
         {
+            var reportSrc = GetReportSource(DropDownList_changeTimeGap.SelectedValue);
+            ReportViewer_main.LocalReport.ReportPath = Server.MapPath("~/RDLC/Report_main.rdlc");
+            ReportViewer_main.LocalReport.DataSources.Add(new ReportDataSource("DataSet1", reportSrc));
+            ReportViewer_main.LocalReport.Refresh();
+        }
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private List<ReportCell> GetReportSource(string timeGap)
+        {
+            DataTable targetFormedTable = new DataTable();
+
             DAO dao = new DAO();
             var purchases = dao.GetTable().AsEnumerable().Select(m => new
             {
@@ -25,35 +40,38 @@ namespace DynamicColumnsRdlcDemo
                 Month = m.Field<DateTime>("Date").Month
             });
 
-            var groupByYear = purchases.GroupBy(p => new { p.ProductName, p.Year })
+            if (DropDownList_changeTimeGap.SelectedValue == "Year")
+            {
+                var groupByYear = purchases.GroupBy(p => new { p.ProductName, p.Year })
                 .Select(g => new
                 {
                     ProductName = g.Key.ProductName,
                     Year = g.Key.Year,
                     Total = g.Sum(x => x.Qty)
                 });
-
-            var tableGroupByYear = groupByYear.ToDataTable();
-            tableGroupByYear = tableGroupByYear.PivotDataTable("Year", "ProductName", "Total", "-", true);
-
-            var groupByMonth = purchases.GroupBy(p => new { p.ProductName, p.Month })
+                targetFormedTable = groupByYear.ToDataTable().PivotDataTable("Year", "ProductName", "Total", "-", true);
+            }
+            else if (DropDownList_changeTimeGap.SelectedValue == "Month")
+            {
+                var groupByMonth = purchases.GroupBy(p => new { p.ProductName, p.Month })
                 .Select(g => new
                 {
                     ProductName = g.Key.ProductName,
                     Month = DateTimeFormatInfo.InvariantInfo.GetAbbreviatedMonthName(g.Key.Month),
                     Total = g.Sum(x => x.Qty)
                 });
-            var tableGroupByMonth = groupByMonth.ToDataTable();
-            tableGroupByMonth = tableGroupByMonth.PivotDataTable("Month", "ProductName", "Total", "-", true);
+                targetFormedTable = groupByMonth.ToDataTable().PivotDataTable("Month", "ProductName", "Total", "-", true);
+            }
 
-            ReportViewer_main.LocalReport.ReportPath = Server.MapPath("~/RDLC/Report_main.rdlc");
-            ReportViewer_main.LocalReport.DataSources.Add(new ReportDataSource("DataSet1", dao.GetReportCells(tableGroupByMonth)));
-            ReportViewer_main.LocalReport.Refresh();
+            return dao.GetReportCells(targetFormedTable);
         }
 
-        protected void Page_Load(object sender, EventArgs e)
+        protected void DropDownList_changeTimeGap_SelectedIndexChanged(object sender, EventArgs e)
         {
-
+            var reportSrc = GetReportSource(DropDownList_changeTimeGap.SelectedValue);
+            ReportViewer_main.LocalReport.DataSources.Clear();
+            ReportViewer_main.LocalReport.DataSources.Add(new ReportDataSource("DataSet1", reportSrc));
+            ReportViewer_main.LocalReport.Refresh();
         }
     }
 }
